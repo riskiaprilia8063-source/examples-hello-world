@@ -3,7 +3,7 @@ const USER_AGENT = "NOVAV2AiPlayer";
 
 // نظام تسمية القنوات الجديد الخاص بك
 const CHANNEL_MAP = {
-  "bein14K": "78378", 
+  "bein14K": "402389", 
   "bein24K": "78379",
   "bein34K": "13606",
   "bein44K": "78381",
