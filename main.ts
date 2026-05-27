@@ -1,7 +1,7 @@
 const BASE_URL = "http://iptv-premium-ott.com:80/live/GHU63295/CFM90315/";
 const USER_AGENT = "NOVAV2AiPlayer";
 
-// نظام تسمية القنوات الجديد الخاص بك
+// قائمة قنواتك
 const CHANNEL_MAP = {
   "bein14K": "402389", 
   "bein24K": "78379",
@@ -48,21 +48,16 @@ Deno.serve(async (request) => {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // استخراج آي بي الزبون لتمريره
-  const clientIP = request.headers.get('x-forwarded-for') || '197.45.12.33';
-
   const fetchHeaders = new Headers();
   fetchHeaders.set('User-Agent', USER_AGENT);
-  fetchHeaders.set('X-Forwarded-For', clientIP);
-  fetchHeaders.set('X-Real-IP', clientIP);
-
-  // دعم المشغلات لتجنب الشاشة السوداء
+  
+  // دعم المشغلات (حل الشاشة السوداء)
   const range = request.headers.get('range');
   if (range) {
     fetchHeaders.set('Range', range);
   }
 
-  // 1. مسار جلب القناة
+  // 1. مسار جلب ملف M3U8
   if (path.startsWith('/viber_tv/')) {
     const alias = path.replace('/viber_tv/', '').replace('.m3u8', '');
     const channel_id = CHANNEL_MAP[alias];
@@ -83,7 +78,8 @@ Deno.serve(async (request) => {
         line = line.trim();
         if (!line) continue;
         
-        if (line.endsWith('.ts') || line.includes('.ts?')) {
+        // التعديل الجذري: أي سطر لا يحتوي على # هو حتماً رابط فيديو!
+        if (!line.startsWith('#')) {
           const segmentUrl = new URL(line, sourceUrl).toString();
           const token = encodeToken(segmentUrl);
           newM3u8 += `${url.origin}/stream_data?token=${token}\n`;
@@ -104,7 +100,7 @@ Deno.serve(async (request) => {
     }
   } 
   
-  // 2. مسار جلب الفيديو
+  // 2. مسار تحميل الفيديو
   else if (path.startsWith('/stream_data')) {
     const token = url.searchParams.get('token');
     if (!token) return new Response("No Token provided", { status: 400 });
@@ -117,8 +113,22 @@ Deno.serve(async (request) => {
           headers: fetchHeaders 
       });
 
-      const responseHeaders = new Headers(response.headers);
+      // تمرير الهيدرز الأصلية للمشغل
+      const responseHeaders = new Headers();
       responseHeaders.set('Access-Control-Allow-Origin', '*');
+      
+      if (response.headers.has('Content-Type')) {
+        responseHeaders.set('Content-Type', response.headers.get('Content-Type') || '');
+      } else {
+        responseHeaders.set('Content-Type', 'video/mp2t');
+      }
+      
+      if (response.headers.has('Content-Length')) {
+        responseHeaders.set('Content-Length', response.headers.get('Content-Length') || '');
+      }
+      if (response.headers.has('Content-Range')) {
+        responseHeaders.set('Content-Range', response.headers.get('Content-Range') || '');
+      }
 
       return new Response(response.body, {
         status: response.status,
@@ -130,5 +140,5 @@ Deno.serve(async (request) => {
     }
   }
 
-  return new Response("Deno Proxy is Active! Use /viber_tv/alias.m3u8 to test.", { status: 200 });
+  return new Response("System Online - Deno Edge Router", { status: 200 });
 });
