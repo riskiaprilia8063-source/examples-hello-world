@@ -1,14 +1,39 @@
-const BASE_URL = "http://er.otbnver.club:80/live/3456456456464653343/2425546343535/";
+const BASE_URL = "http://iptv-premium-ott.com:80/live/GHU63295/CFM90315/";
 const USER_AGENT = "NOVAV2AiPlayer";
 
+// نظام تسمية القنوات الجديد الخاص بك
 const CHANNEL_MAP = {
-  "bein1k": "527418", 
-  "bein2k": "235756",
-  "bein3k": "162154",
-  "bein4k": "367434"
+  "bein14K": "78378", 
+  "bein24K": "78379",
+  "bein34K": "13606",
+  "bein44K": "78381",
+  "bein54K": "78382",
+  "bein64K": "78383",
+  "bein74K": "78384",
+  "bein1FHD": "13608",
+  "bein2FHD": "368731",
+  "bein3FHD": "13606",
+  "bein4FHD": "13675",
+  "bein5FHD": "13673",
+  "bein6FHD": "13587",
+  "bein7FHD": "13602",
+  "bein1HD": "13682",
+  "bein2HD": "13680",
+  "bein3HD": "13678",
+  "bein4HD": "13676",
+  "bein5HD": "13674",
+  "bein6HD": "13672",
+  "bein7HD": "13576",
+  "bein1SD": "13614",
+  "bein2SD": "13615",
+  "bein3SD": "13616",
+  "bein4SD": "13617",
+  "bein5SD": "13618",
+  "bein6SD": "13614",
+  "bein7SD": "13641"
 };
 
-// دوال تشفير وفك تشفير الروابط
+// دوال التشفير
 function encodeToken(str) {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
@@ -19,26 +44,25 @@ function decodeToken(str) {
   return atob(str);
 }
 
-// تشغيل السيرفر على بيئة Deno
 Deno.serve(async (request) => {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // استخراج آي بي الزبون
+  // استخراج آي بي الزبون لتمريره
   const clientIP = request.headers.get('x-forwarded-for') || '197.45.12.33';
 
-  // تجهيز الترويسات التي ستذهب للمصدر (مع دعم Range لحل مشكلة الشاشة السوداء)
   const fetchHeaders = new Headers();
   fetchHeaders.set('User-Agent', USER_AGENT);
   fetchHeaders.set('X-Forwarded-For', clientIP);
   fetchHeaders.set('X-Real-IP', clientIP);
 
+  // دعم المشغلات لتجنب الشاشة السوداء
   const range = request.headers.get('range');
   if (range) {
     fetchHeaders.set('Range', range);
   }
 
-  // 1. مسار جلب القناة (m3u8)
+  // 1. مسار جلب القناة
   if (path.startsWith('/viber_tv/')) {
     const alias = path.replace('/viber_tv/', '').replace('.m3u8', '');
     const channel_id = CHANNEL_MAP[alias];
@@ -80,7 +104,7 @@ Deno.serve(async (request) => {
     }
   } 
   
-  // 2. مسار تحميل أجزاء الفيديو (ts)
+  // 2. مسار جلب الفيديو
   else if (path.startsWith('/stream_data')) {
     const token = url.searchParams.get('token');
     if (!token) return new Response("No Token provided", { status: 400 });
@@ -106,6 +130,5 @@ Deno.serve(async (request) => {
     }
   }
 
-  // رسالة ترحيبية للتأكد من عمل السيرفر عند فتح الرابط الأساسي
   return new Response("Deno Proxy is Active! Use /viber_tv/alias.m3u8 to test.", { status: 200 });
 });
